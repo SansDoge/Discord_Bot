@@ -6,7 +6,7 @@ import { Client, Message, MessageEmbed, MessageReaction, User, TextChannel, Guil
 require('discord-reply');
 import { MongoClient, Collection } from 'mongodb';
 import { EventEmitter } from 'events';
-import { job } from 'cron';
+// import { job } from 'cron';
 import { Data2, Child } from '../interfaces/reddit';
 import { server, event, user } from '../interfaces/database';
 import { isProd } from '../helpers/functions';
@@ -18,7 +18,7 @@ import { LatexConverter } from '../plugins/latex';
 import { RobinHoodPlugin } from '../plugins/ticker';
 import { AnimeDetector } from '../plugins/anime-detector';
 import * as moment from 'moment';
-import { orderBy } from 'lodash';
+// import { orderBy } from 'lodash';
 
 export default class Bot {
   public Ready: Promise<void>;
@@ -45,67 +45,67 @@ export default class Bot {
       this.client = new Client({ partials: ['MESSAGE', 'REACTION'] });
       this.client.login(isProd() ? process.env.BOT_TOKEN : process.env.TEST_BOT_TOKEN), (this.animeDetector = new AnimeDetector());
 
-      MongoClient.connect(process.env.MONGODB_URI, { useUnifiedTopology: true })
-        .then((client) => {
-          this.mongoClient = client;
-        })
-        .then((_) => {
-          const dbName: string = isProd() ? 'discord_bot' : 'discord_bot_testing';
-          this.eventsCollection = this.mongoClient.db(dbName).collection('events');
-          this.serversCollection = this.mongoClient.db(dbName).collection('servers');
-          this.usersCollection = this.mongoClient.db(dbName).collection('users');
-          Promise.allSettled([
-            this.eventsCollection
-              .find({})
-              .toArray()
-              .then((docs) => {
-                this.events = docs;
-                this.events.forEach((event) => {
-                  this.scheduleEventJob(event.time);
-                })
-              }),
-            this.eventsCollection.deleteMany({ time: { $lt: new Date() } }),
-            this.animeDetector.initialize(),
-          ]).then(() => {
-            this.client.once('ready', () => {
-              job(
-                '0,30 * * * *',
-                () => {
-                  this.serversCollection
-                    .find({})
-                    .toArray()
-                    .then((servers) => this.sendMeme(servers));
-                },
-                null,
-                true,
-              );
+    //   MongoClient.connect(process.env.MONGODB_URI, { useUnifiedTopology: true })
+    //     .then((client) => {
+    //       this.mongoClient = client;
+    //     })
+    //     .then((_) => {
+    //       const dbName: string = isProd() ? 'discord_bot' : 'discord_bot_testing';
+    //       this.eventsCollection = this.mongoClient.db(dbName).collection('events');
+    //       this.serversCollection = this.mongoClient.db(dbName).collection('servers');
+    //       this.usersCollection = this.mongoClient.db(dbName).collection('users');
+    //       Promise.allSettled([
+    //         this.eventsCollection
+    //           .find({})
+    //           .toArray()
+    //           .then((docs) => {
+    //             this.events = docs;
+    //             this.events.forEach((event) => {
+    //               this.scheduleEventJob(event.time);
+    //             })
+    //           }),
+    //         this.eventsCollection.deleteMany({ time: { $lt: new Date() } }),
+    //         this.animeDetector.initialize(),
+    //       ]).then(() => {
+    //         this.client.once('ready', () => {
+    //           job(
+    //             '0,30 * * * *',
+    //             () => {
+    //               this.serversCollection
+    //                 .find({})
+    //                 .toArray()
+    //                 .then((servers) => this.sendMeme(servers));
+    //             },
+    //             null,
+    //             true,
+    //           );
 
-              job(
-                '0 0 * * *',
-                () => {
-                  this.usersCollection.updateMany({}, { $set: { sentAttachments: 0 } });
-                },
-                null,
-                true,
-              );
+    //           job(
+    //             '0 0 * * *',
+    //             () => {
+    //               this.usersCollection.updateMany({}, { $set: { sentAttachments: 0 } });
+    //             },
+    //             null,
+    //             true,
+    //           );
 
-              job(
-                '0 10 * * *',
-                () => {
-                  this.notifyMariners();
-                },
-                null,
-                true,
-                null,
-                null,
-                true,
-              );
+    //           job(
+    //             '0 10 * * *',
+    //             () => {
+    //               this.notifyMariners();
+    //             },
+    //             null,
+    //             true,
+    //             null,
+    //             null,
+    //             true,
+    //           );
 
-              resolve();
-            });
-          });
-        });
-    });
+    //           resolve();
+    //         });
+    //       });
+    //     });
+    // });
 
     this.client.on('message', (message) => {
       if (message.author.bot) return;
@@ -175,36 +175,36 @@ export default class Bot {
       });
     });
 
-    reaction.on('✅', (reaction: MessageReaction, user: User, guild: Guild, event: String) => {
-      let embed = reaction.message.embeds[0];
-      if (!embed.title || !embed.title.startsWith('​')) return;
+    // reaction.on('✅', (reaction: MessageReaction, user: User, guild: Guild, event: String) => {
+    //   let embed = reaction.message.embeds[0];
+    //   if (!embed.title || !embed.title.startsWith('​')) return;
 
-      if (event === 'messageReactionAdd') embed.fields.push({ name: 'Attendee', value: guild.member(user).displayName, inline: false });
-      else embed.fields = embed.fields.filter((field) => field.value !== guild.member(user).displayName);
+    //   if (event === 'messageReactionAdd') embed.fields.push({ name: 'Attendee', value: guild.member(user).displayName, inline: false });
+    //   else embed.fields = embed.fields.filter((field) => field.value !== guild.member(user).displayName);
 
-      reaction.message.edit(new MessageEmbed(embed)).then((_) => {
-        const index = this.events.findIndex((e) => e.time.valueOf() === embed.timestamp);
-        if (index < 0) return;
+    //   reaction.message.edit(new MessageEmbed(embed)).then((_) => {
+    //     const index = this.events.findIndex((e) => e.time.valueOf() === embed.timestamp);
+    //     if (index < 0) return;
 
-        event === 'messageReactionAdd'
-          ? this.events[index].attendees.push(user.id)
-          : (this.events[index].attendees = this.events[index].attendees.filter((a) => a != user.id));
-        this.updateEvent(new Date(embed.timestamp), this.events[index].attendees);
-      });
-    });
+    //     event === 'messageReactionAdd'
+    //       ? this.events[index].attendees.push(user.id)
+    //       : (this.events[index].attendees = this.events[index].attendees.filter((a) => a != user.id));
+    //     this.updateEvent(new Date(embed.timestamp), this.events[index].attendees);
+    //   });
+    // });
 
-    command.on('event', (message: Message) => {
-      const parsed = parse(message.content);
+    // command.on('event', (message: Message) => {
+    //   const parsed = parse(message.content);
 
-      // Generate the embed to post to discord
-      let embed = new MessageEmbed().setTitle('​' + parsed.eventTitle).setTimestamp(new Date(parsed.startDate).valueOf());
+    //   // Generate the embed to post to discord
+    //   let embed = new MessageEmbed().setTitle('​' + parsed.eventTitle).setTimestamp(new Date(parsed.startDate).valueOf());
 
-      message.channel.send({ embed }).then((sent) => {
-        sent.react('✅');
-        if (parsed.startDate && new Date(parsed.startDate) > new Date())
-          this.newEvent({ title: parsed.eventTitle, time: parsed.startDate, attendees: [], messageId: sent.id, channelId: message.channel.id });
-      });
-    });
+    //   message.channel.send({ embed }).then((sent) => {
+    //     sent.react('✅');
+    //     if (parsed.startDate && new Date(parsed.startDate) > new Date())
+    //       this.newEvent({ title: parsed.eventTitle, time: parsed.startDate, attendees: [], messageId: sent.id, channelId: message.channel.id });
+    //   });
+    // });
 
     command.on('help', (message: Message) => {
       message.channel.send('<https://github.com/agavram/Discord_Bot/blob/master/HELP.md>');
@@ -354,14 +354,14 @@ export default class Bot {
         });
     });
 
-    command.on('sendmeme', (message: Message) => {
-      if (message.author.id === '213720243057590274') {
-        this.serversCollection
-          .find({})
-          .toArray()
-          .then((servers) => this.sendMeme(servers));
-      }
-    });
+    // command.on('sendmeme', (message: Message) => {
+    //   if (message.author.id === '213720243057590274') {
+    //     this.serversCollection
+    //       .find({})
+    //       .toArray()
+    //       .then((servers) => this.sendMeme(servers));
+    //   }
+    // });
 
     command.on('version', (message: Message) => {
       let gitRevision = execSync('git rev-parse HEAD').toString().trim();
@@ -450,149 +450,149 @@ export default class Bot {
     });
   }
 
-  private newEvent(event: event) {
-    this.eventsCollection.insertOne(event);
-    this.events.push(event);
-    this.scheduleEventJob(event.time);
-  }
+  // private newEvent(event: event) {
+  //   this.eventsCollection.insertOne(event);
+  //   this.events.push(event);
+  //   this.scheduleEventJob(event.time);
+  // }
 
-  private async notifyMariners() {
-    const res = await axios.get('http://statsapi.mlb.com/api/v1/schedule/games/?sportId=1');
-    const games = res.data?.dates[0].games;
+  // private async notifyMariners() {
+  //   const res = await axios.get('http://statsapi.mlb.com/api/v1/schedule/games/?sportId=1');
+  //   const games = res.data?.dates[0].games;
 
-    console.log('Currently: ' + new Date().toLocaleTimeString());
+  //   console.log('Currently: ' + new Date().toLocaleTimeString());
 
-    for (const game of games ?? []) {
-      if (game.teams.away.team.id === 136 || game.teams.home.team.id === 136) {
-        const gameStart = new Date(game.gameDate);
-        if (gameStart < new Date()) return;
+  //   for (const game of games ?? []) {
+  //     if (game.teams.away.team.id === 136 || game.teams.home.team.id === 136) {
+  //       const gameStart = new Date(game.gameDate);
+  //       if (gameStart < new Date()) return;
 
-        const notificationTime = new Date(gameStart.getTime() - 1000 * 60 * 10);
-        // TODO: Remove this logging
-        console.log('Notifying for game at: ' + notificationTime.toString());
-        job(
-          notificationTime,
-          async () => {
-            const servers: server[] = await this.serversCollection.find({ channelMariners: { $exists: true } }).toArray();
-            if (!servers) throw new Error('Unable to fetch servers');
+  //       const notificationTime = new Date(gameStart.getTime() - 1000 * 60 * 10);
+  //       // TODO: Remove this logging
+  //       console.log('Notifying for game at: ' + notificationTime.toString());
+  //       job(
+  //         notificationTime,
+  //         async () => {
+  //           const servers: server[] = await this.serversCollection.find({ channelMariners: { $exists: true } }).toArray();
+  //           if (!servers) throw new Error('Unable to fetch servers');
 
-            servers.forEach((server) => {
-              this.client.channels
-                .resolve(server.channelMariners)
-                //@ts-ignore
-                .send(`${game.teams.away.team.name} @ ${game.teams.home.team.name} - ${moment(gameStart).format('h:mm A')}`);
-            });
+  //           servers.forEach((server) => {
+  //             this.client.channels
+  //               .resolve(server.channelMariners)
+  //               //@ts-ignore
+  //               .send(`${game.teams.away.team.name} @ ${game.teams.home.team.name} - ${moment(gameStart).format('h:mm A')}`);
+  //           });
 
-            const highlightsPosted: string[] = [];
+  //           const highlightsPosted: string[] = [];
 
-            const ping = setInterval(async () => {
-              const status = (await axios.get(`https://statsapi.mlb.com/api/v1/schedule?sportId=1&gamePk=${game.gamePk}&useLatestGames=true&language=en`)).data
-                .dates[0].games[0].status;
+  //           const ping = setInterval(async () => {
+  //             const status = (await axios.get(`https://statsapi.mlb.com/api/v1/schedule?sportId=1&gamePk=${game.gamePk}&useLatestGames=true&language=en`)).data
+  //               .dates[0].games[0].status;
 
-              let updates = (await axios.get(`http://statsapi.mlb.com/api/v1/game/${game.gamePk}/content`)).data.highlights.highlights.items;
-              updates = orderBy(updates, (update) => new Date(update.date), 'asc');
+  //             let updates = (await axios.get(`http://statsapi.mlb.com/api/v1/game/${game.gamePk}/content`)).data.highlights.highlights.items;
+  //             updates = orderBy(updates, (update) => new Date(update.date), 'asc');
 
-              for (let i = 0; i < updates.length; i++) {
-                const update = updates[i];
-                if (highlightsPosted.includes(update.id)) continue;
+  //             for (let i = 0; i < updates.length; i++) {
+  //               const update = updates[i];
+  //               if (highlightsPosted.includes(update.id)) continue;
 
-                servers.forEach(async (server) => {
-                  this.client.channels.resolve(server.channelMariners);
-                  const channel = this.client.channels.resolve(server.channelMariners) as TextChannel;
-                  await channel.send(update.blurb);
-                  await channel.send(update.playbacks[0].url);
-                });
+  //               servers.forEach(async (server) => {
+  //                 this.client.channels.resolve(server.channelMariners);
+  //                 const channel = this.client.channels.resolve(server.channelMariners) as TextChannel;
+  //                 await channel.send(update.blurb);
+  //                 await channel.send(update.playbacks[0].url);
+  //               });
 
-                highlightsPosted.push(update.id);
-              }
+  //               highlightsPosted.push(update.id);
+  //             }
 
-              if (status.abstractGameState === 'Final') clearInterval(ping);
-            }, 1000 * 60);
-          },
-          null,
-          true,
-        );
-      }
-    }
-  }
+  //             if (status.abstractGameState === 'Final') clearInterval(ping);
+  //           }, 1000 * 60);
+  //         },
+  //         null,
+  //         true,
+  //       );
+  //     }
+  //   }
+  // }
 
-  private updateEvent(time: Date, attendees: Array<string>) {
-    this.eventsCollection.updateOne({ time: time }, { $set: { attendees } });
-  }
+  // private updateEvent(time: Date, attendees: Array<string>) {
+  //   this.eventsCollection.updateOne({ time: time }, { $set: { attendees } });
+  // }
 
-  private async sendMeme(servers: Array<server>) {
-    let res = await axios.get('https://www.reddit.com/r/dankmemes/hot.json');
-    if (res.status >= 400) {
-      servers.forEach((server) => {
-        //@ts-ignore
-        this.client.channels.resolve(server.channelMemes).send('Reddit is down with status code: ' + res.status);
-      });
-      return;
-    }
+  // private async sendMeme(servers: Array<server>) {
+  //   let res = await axios.get('https://www.reddit.com/r/dankmemes/hot.json');
+  //   if (res.status >= 400) {
+  //     servers.forEach((server) => {
+  //       //@ts-ignore
+  //       this.client.channels.resolve(server.channelMemes).send('Reddit is down with status code: ' + res.status);
+  //     });
+  //     return;
+  //   }
 
-    const posts: Array<Child> = res.data.data.children;
+  //   const posts: Array<Child> = res.data.data.children;
 
-    servers.forEach((server) => {
-      for (let index = 0; index < posts.length; index++) {
-        const post: Data2 = posts[index].data;
-        if (server.posts.includes(post.id) || post.stickied || post.author === 'idea4granted') continue;
+  //   servers.forEach((server) => {
+  //     for (let index = 0; index < posts.length; index++) {
+  //       const post: Data2 = posts[index].data;
+  //       if (server.posts.includes(post.id) || post.stickied || post.author === 'idea4granted') continue;
 
-        // The list does not need to hold memes more than a day old
-        if (server.posts.length > 48) server.posts.shift();
+  //       // The list does not need to hold memes more than a day old
+  //       if (server.posts.length > 48) server.posts.shift();
 
-        server.posts.push(post.id);
-        this.serversCollection.updateOne({ _id: server._id }, { $set: { posts: server.posts } });
+  //       server.posts.push(post.id);
+  //       this.serversCollection.updateOne({ _id: server._id }, { $set: { posts: server.posts } });
 
-        // Attempt to get an image
-        let mediaUrl: string = post.url;
+  //       // Attempt to get an image
+  //       let mediaUrl: string = post.url;
 
-        // Generate the embed to post to discord
-        let embed = new MessageEmbed()
-          .setColor(this.redditColor)
-          .setTitle(post.title)
-          .setURL('https://www.reddit.com' + post.permalink)
-          .setTimestamp(post.created_utc * 1000)
-          .setAuthor(
-            post.author,
-            'https://cdn.discordapp.com/attachments/486983846815072256/734930339209805885/reddit-icon.png',
-            'https://www.reddit.com/u/' + post.author,
-          );
+  //       // Generate the embed to post to discord
+  //       let embed = new MessageEmbed()
+  //         .setColor(this.redditColor)
+  //         .setTitle(post.title)
+  //         .setURL('https://www.reddit.com' + post.permalink)
+  //         .setTimestamp(post.created_utc * 1000)
+  //         .setAuthor(
+  //           post.author,
+  //           'https://cdn.discordapp.com/attachments/486983846815072256/734930339209805885/reddit-icon.png',
+  //           'https://www.reddit.com/u/' + post.author,
+  //         );
 
-        // Check if post is video from imgur. gifv is proprietary so change the url to mp4
-        if (mediaUrl.includes('imgur.com') && mediaUrl.endsWith('gifv')) {
-          mediaUrl = mediaUrl.substring(0, mediaUrl.length - 4) + 'mp4';
-          embed.description = mediaUrl;
-        } else embed.image = { url: mediaUrl };
+  //       // Check if post is video from imgur. gifv is proprietary so change the url to mp4
+  //       if (mediaUrl.includes('imgur.com') && mediaUrl.endsWith('gifv')) {
+  //         mediaUrl = mediaUrl.substring(0, mediaUrl.length - 4) + 'mp4';
+  //         embed.description = mediaUrl;
+  //       } else embed.image = { url: mediaUrl };
 
-        const tc = this.client.channels.resolve(server.channelMemes) as TextChannel;
-        tc.send({ embed: embed }).then(() => {
-          if (mediaUrl.endsWith('mp4')) tc.send({ files: [mediaUrl] });
-        });
+  //       const tc = this.client.channels.resolve(server.channelMemes) as TextChannel;
+  //       tc.send({ embed: embed }).then(() => {
+  //         if (mediaUrl.endsWith('mp4')) tc.send({ files: [mediaUrl] });
+  //       });
 
-        break;
-      }
-    });
-  }
+  //       break;
+  //     }
+  //   });
+  // }
 
-  private scheduleEventJob(time: Date) {
-    job(
-      time,
-      async () => {
-        const event = this.events[this.events.findIndex((e) => e.time === time)];
-        const channel = (await this.client.channels.fetch(event.channelId)) as TextChannel;
-        const message = await channel.messages.fetch(event.messageId);
+  // private scheduleEventJob(time: Date) {
+  //   job(
+  //     time,
+  //     async () => {
+  //       const event = this.events[this.events.findIndex((e) => e.time === time)];
+  //       const channel = (await this.client.channels.fetch(event.channelId)) as TextChannel;
+  //       const message = await channel.messages.fetch(event.messageId);
 
-        let mentions: string[] = [];
-        event.attendees.forEach(async (attendee) => {
-          mentions.push(`<@${attendee}>`);
-        });
+  //       let mentions: string[] = [];
+  //       event.attendees.forEach(async (attendee) => {
+  //         mentions.push(`<@${attendee}>`);
+  //       });
 
-        // @ts-ignore
-        message.lineReplyNoMention(mentions.join(' '));
-        this.eventsCollection.deleteOne({ time: time });
-      },
-      null,
-      true,
+  //       // @ts-ignore
+  //       message.lineReplyNoMention(mentions.join(' '));
+  //       this.eventsCollection.deleteOne({ time: time });
+  //     },
+  //     null,
+  //     true,
     );
   }
 }
